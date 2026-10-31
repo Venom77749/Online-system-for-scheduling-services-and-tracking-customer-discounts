@@ -40,13 +40,13 @@ class MockLoyaltyRestClient:
 if __name__ == "__main__":
     broker = MessageBroker()
 
-    # 1. Запуск Loyalty Service
+    # Запуск Loyalty Service
     rules_proxy = CachedRulesProxy(DatabaseRulesProvider())
     tier_strategy = TierAccumulativeStrategy(rules_provider=rules_proxy)
     accrual_creator = AccrualTransactionCreator()
     loyalty_consumer = LoyaltyAppointmentCompletedConsumer(accrual_creator)
 
-    # 2. Запуск Notification Service
+    # Запуск Notification Service
     sms_adapter = SmsAdapter(VendorSmsSdk())
     notification_consumer = NotificationAppointmentCompletedConsumer(sms_adapter)
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     broker.subscribe("appointment.completed", loyalty_consumer.handle_event)
     broker.subscribe("appointment.completed", notification_consumer.handle_event)
 
-    # 3. Инициализация Booking Service
+    # Инициализация Booking Service
     loyalty_api_client = MockLoyaltyRestClient(tier_strategy)
     facade = BookingOrchestrationFacade(loyalty_api_client, broker)
 
@@ -76,7 +76,6 @@ if __name__ == "__main__":
 
     print("\n=== ЭТАП 2: Жизненный цикл записи (State) ===")
     def on_complete_callback(apt_id: str):
-        # При завершении услуги публикуем событие в брокер
         broker.publish("appointment.completed", {
             "appointment_id": apt_id,
             "client_id": appointment.client_id,
