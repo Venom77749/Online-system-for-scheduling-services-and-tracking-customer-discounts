@@ -58,7 +58,7 @@ class AppointmentBuilder:
             raise ValueError("Не заполнены обязательные параметры бронирования")
 
         price_after_discount = self._base_price - self._discount_amount
-        # Правило ТЗ: списание бонусов не более 50% стоимости после скидки
+        
         max_allowed_points = int(price_after_discount * 0.5)
         points_used = min(self._points_to_redeem, max_allowed_points)
         final_price = price_after_discount - points_used
