@@ -1,3 +1,4 @@
+import db
 from senders_adapter import IMessageSender
 
 
@@ -11,3 +12,4 @@ class NotificationAppointmentCompletedConsumer:
         phone = event_data.get("phone", "+79990001122")
         text = f"Услуга завершена! К оплате: {event_data['final_price']} руб. Спасибо за визит!"
         self._sender.send(recipient=phone, message=text)
+        db.save_notification(recipient=phone, message=text)

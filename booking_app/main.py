@@ -1,8 +1,12 @@
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import httpx
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import db
 from booking_facade import BookingOrchestrationFacade
@@ -35,6 +39,11 @@ class CreateAppointmentRequest(BaseModel):
     phone: str = "+7 (912) 888-77-66"
 
 
+@app.get("/health")
+def health():
+    return {"service": "booking_app", "status": "ok"}
+
+
 @app.get("/appointments")
 def get_all_appointments():
     return db.list_appointments()
@@ -62,7 +71,12 @@ def create_appointment(req: CreateAppointmentRequest):
             points_to_redeem=req.points_to_redeem,
         )
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=400, detail=f"Ошибка Loyalty Service: {e.response.text}")
+        detail = e.response.text
+        try:
+            detail = e.response.json().get("detail", detail)
+        except Exception:
+            pass
+        raise HTTPException(status_code=400, detail=f"Ошибка Loyalty Service: {detail}")
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Loyalty Service недоступен: {e}")
     except ValueError as e:

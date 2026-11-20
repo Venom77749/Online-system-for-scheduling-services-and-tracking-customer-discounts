@@ -1,6 +1,10 @@
+import sys
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import db
 from cached_rules_proxy import DatabaseRulesProvider, CachedRulesProxy
@@ -53,11 +57,38 @@ class AppointmentCompletedEvent(BaseModel):
     phone: str = "+7 (912) 888-77-66"
 
 
+@app.get("/health")
+def health():
+    return {"service": "loyalty_app", "status": "ok"}
+
+
+@app.get("/loyalty/rules")
+def get_rules():
+    return rules_proxy.fetch_rules()
+
+
 @app.get("/loyalty/clients/{client_id}")
 def get_client_profile(client_id: str):
     profile = db.get_or_create_client(client_id)
     transactions = db.get_client_transactions(client_id)
-    return {"profile": profile, "transactions": transactions}
+    rules = rules_proxy.fetch_rules()
+    current_rule = max(
+        [r for r in rules if profile["total_spent"] >= r["required_spend"]],
+        key=lambda x: x["required_spend"],
+    )
+    return {
+        "profile": {
+            **profile,
+            "tier": current_rule["tier"],
+            "discount_percent": current_rule["discount_percent"],
+        },
+        "transactions": transactions,
+    }
+
+
+@app.get("/notifications")
+def get_notifications():
+    return db.list_notifications()
 
 
 @app.post("/loyalty/calculate-discount")

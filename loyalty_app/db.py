@@ -58,6 +58,16 @@ def init_db():
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS notifications_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                recipient TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         conn.commit()
 
 
@@ -119,5 +129,23 @@ def get_client_transactions(client_id: str):
         rows = conn.execute(
             "SELECT * FROM bonus_transactions WHERE client_id = ? ORDER BY created_at DESC",
             (client_id,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def save_notification(recipient: str, message: str):
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO notifications_log (recipient, message) VALUES (?, ?)",
+            (recipient, message),
+        )
+        conn.commit()
+
+
+def list_notifications(limit: int = 30):
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM notifications_log ORDER BY id DESC LIMIT ?",
+            (limit,),
         ).fetchall()
         return [dict(r) for r in rows]

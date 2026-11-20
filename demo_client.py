@@ -1,6 +1,8 @@
-import httpx
 import sys
-sys.stdout.reconfigure(encoding="utf-8")
+import httpx
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BOOKING_URL = "http://127.0.0.1:8001"
 LOYALTY_URL = "http://127.0.0.1:8002"
@@ -23,10 +25,10 @@ def main():
     resp.raise_for_status()
     apt = resp.json()
     print(
-        f"Запись сохранена в SQLite (booking.db): базовый прайс = {apt['base_price']} ₽, "
-        f"скидка = {apt['discount_amount']} ₽, "
+        f"Запись сохранена в SQLite (booking.db): базовый прайс = {apt['base_price']} руб., "
+        f"скидка = {apt['discount_amount']} руб., "
         f"списано бонусов = {apt['points_redeemed']}, "
-        f"итоговый чек = {apt['final_price']} ₽"
+        f"итоговый чек = {apt['final_price']} руб."
     )
 
     print("\n=== ЭТАП 2: Подтверждение записи (State) ===")
